@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sim Utility Hub Pro</title>
+    <style>
+        :root { 
+            --primary: #ff3c00; 
+            --bg: #050505; 
+            --card-bg: rgba(255, 255, 255, 0.03); 
+            --fav-gold: #ffd700; 
+            --discord: #5865F2;
+        }
+
+        /* Scrollbar Personalizada */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; border: 2px solid var(--bg); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        body { 
+            background: radial-gradient(circle at top center, #1a1a1a 0%, #050505 100%); 
+            color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; 
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+        
+        header { 
+            flex-shrink: 0; background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 20px 0; text-align: center; z-index: 1000;
+        }
+
+        .view-controls { position: absolute; left: 40px; top: 22px; display: flex; gap: 15px; }
+        .view-btn { cursor: pointer; font-size: 1.4rem; color: #444; transition: 0.3s; line-height: 1; }
+        .view-btn.active { color: var(--primary); text-shadow: 0 0 10px rgba(255,60,0,0.5); }
+
+        .settings-wrapper { position: absolute; right: 40px; top: 15px; cursor: pointer; text-align: center; }
+        .settings-btn { font-size: 1.8rem; color: var(--primary); }
+        .settings-text { font-size: 0.65rem; color: #888; text-transform: uppercase; font-weight: bold; display: block; }
+
+        .logo { font-size: 2rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin: 0; }
+        .logo span { color: var(--primary); }
+        
+        #appSearch { 
+            width: 400px; padding: 12px 25px; background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; color: white; outline: none; margin-top: 15px;
+        }
+
+        main { flex-grow: 1; overflow-y: auto; padding-bottom: 80px; position: relative; }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 25px; padding: 40px; transition: 0.3s; }
+
+        /* Estilo Feedback Pesquisa Vazia */
+        #noResults { display: none; text-align: center; padding-top: 100px; width: 100%; }
+        #noResults div { font-size: 3rem; color: #222; margin-bottom: 10px; }
+        #noResults h3 { color: #555; font-weight: 400; }
+
+        /* Cards - Grid Mode (Default) */
+        .card { 
+            background: var(--card-bg); backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            padding: 25px 20px; border-radius: 20px; width: 240px; position: relative; 
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            opacity: 0; transform: translateY(20px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .card.show { opacity: 1; transform: translateY(0); }
+        .card:hover { transform: translateY(-10px); border-color: var(--primary); background: rgba(255, 255, 255, 0.07); }
+
+        .card h2 { font-size: 1.2rem; margin: 10px 0 5px 0; color: #fff; }
+        .card p { font-size: 0.8rem; color: #aaa; margin-bottom: 20px; height: 60px; overflow: hidden; display: -webkit-box; line-clamp: 4; -webkit-line-clamp: 4; -webkit-box-orient: vertical; line-height: 1.2; }
+
+        .fav-star { position: absolute; top: 15px; right: 15px; cursor: pointer; color: rgba(255,255,255,0.1); font-size: 1.4rem; z-index: 5; }
+        .fav-star.active { color: var(--fav-gold); filter: drop-shadow(0 0 5px var(--fav-gold)); }
+
+        .logo-container { height: 60px; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .logo-container img { max-height: 50px; max-width: 180px; object-fit: contain; }
+
+        .btn-download { background: #1a1a1a; color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 12px; width: 100%; border-radius: 10px; cursor: pointer; font-weight: 800; transition: 0.3s; margin-top: auto; }
+        .btn-download:hover { background: var(--primary); border-color: var(--primary); }
+
+        /* Estilos Modo Lista - Corrigido */
+        .list-mode { flex-direction: column; align-items: center; gap: 10px; }
+        .list-mode .card { 
+            width: 95%; max-width: 1100px; height: 75px; flex-direction: row; 
+            padding: 0 25px; justify-content: flex-start; align-items: center; text-align: left;
+        }
+        .list-mode .fav-star { position: static; margin-right: 20px; order: 1; }
+        .list-mode .logo-container { width: 60px; height: 40px; margin-bottom: 0; order: 2; flex-shrink: 0; }
+        .list-mode .logo-container img { max-height: 35px; max-width: 50px; }
+        .list-mode .card h2 { font-size: 1.1rem; margin: 0; width: 200px; padding-left: 20px; order: 3; flex-shrink: 0; }
+        .list-mode .card p { 
+            margin: 0; height: auto; display: block; white-space: nowrap; 
+            overflow: hidden; text-overflow: ellipsis; flex-grow: 1; 
+            padding: 0 40px; order: 4; line-clamp: initial; -webkit-line-clamp: initial;
+        }
+        .list-mode .btn-download { width: 140px; margin-top: 0; order: 5; flex-shrink: 0; }
+
+        footer {
+            flex-shrink: 0; height: 45px; background: rgba(5, 5, 5, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 35px; font-size: 0.72rem; color: #666; z-index: 1000;
+        }
+
+        .footer-left strong { color: var(--primary); }
+        .app-version { margin-left: 12px; color: #555; font-weight: bold; background: #111; padding: 2px 6px; border-radius: 4px; border: 1px solid #222; }
+        
+        .btn-open-folder { 
+            background: transparent; border: 1px solid #222; color: #888; 
+            padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.65rem; 
+            margin-right: 15px; transition: 0.3s; font-weight: bold;
+        }
+        .btn-open-folder:hover { border-color: var(--primary); color: white; }
+
+        .discord-link { color: var(--discord); cursor: pointer; font-weight: bold; text-decoration: underline; transition: 0.3s; }
+        .discord-link:hover { color: #fff; }
+
+        .status-dot { width: 8px; height: 8px; background: #444; border-radius: 50%; margin-right: 8px; }
+        #toast-container { position: fixed; bottom: 60px; right: 30px; z-index: 9999; }
+        .toast { background: #111; color: #fff; border-left: 4px solid var(--primary); padding: 12px 20px; margin-top: 10px; border-radius: 4px; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+        #settings-view { display: none; padding: 60px 20px; text-align: center; height: 100%; }
+        .path-box { background: rgba(0,0,0,0.4); border: 1px solid #333; padding: 20px; border-radius: 12px; margin: 30px auto; color: #00ff64; max-width: 600px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="view-controls">
+            <div id="gridBtn" class="view-btn active" onclick="changeView('grid')" title="Grid View">▤</div>
+            <div id="listBtn" class="view-btn" onclick="changeView('list')" title="List View">≡</div>
+        </div>
+        <div class="settings-wrapper" onclick="toggleSettings()">
+            <div class="settings-btn">⚙</div>
+            <span class="settings-text">Settings</span>
+        </div>
+        <div class="logo">SIM <span>UTILITY HUB</span></div>
+        <input type="text" id="appSearch" placeholder="Search tool or category..." onkeyup="filtrarApps()">
+    </header>
+
+    <main id="home-view">
+        <!-- Mensagem de Pesquisa Vazia -->
+        <div id="noResults">
+            <div>(╯°□°)╯</div>
+            <h3>No tools found. Try another name.</h3>
+        </div>
+
+        <div class="container" id="appsContainer">
+            <!-- CARDS (Certifica-te que a ordem interna é: Estrela, Logo, H2, P, Button) -->
+            <div class="card" data-id="Asetek"><div class="fav-star" onclick="toggleFav('Asetek')">★</div><div class="logo-container"><img src="./logos/Asetek.png"></div><h2>Asetek</h2><p>Software RaceHub</p><button class="btn-download" onclick="instalar('Asetek')">DOWNLOAD</button></div>
+            <div class="card" data-id="Bloop"><div class="fav-star" onclick="toggleFav('Bloop')">★</div><div class="logo-container"><img src="./logos/bloop.png"></div><h2>Bloops</h2><p>Overlay throttle and brake traces along with audio cues</p><button class="btn-download" onclick="instalar('Bloop')">DOWNLOAD</button></div>
+            <div class="card" data-id="Conspit"><div class="fav-star" onclick="toggleFav('Conspit')">★</div><div class="logo-container"><img src="./logos/Conspit.png"></div><h2>Conspit</h2><p>Central Software</p><button class="btn-download" onclick="instalar('Conspit')">DOWNLOAD</button></div>
+            <div class="card" data-id="CrewChief"><div class="fav-star" onclick="toggleFav('CrewChief')">★</div><div class="logo-container"><img src="./logos/crewchief.png"></div><h2>Crew Chief</h2><p>Spotter</p><button class="btn-download" onclick="instalar('CrewChief')">DOWNLOAD</button></div>
+            <div class="card" data-id="IrDashies"><div class="fav-star" onclick="toggleFav('IrDashies')">★</div><div class="logo-container"><img src="./logos/dashies.png"></div><h2>IrDashies</h2><p>Iracing Overlays</p><button class="btn-download" onclick="instalar('IrDashies')">DOWNLOAD</button></div>
+            <div class="card" data-id="DRE"><div class="fav-star" onclick="toggleFav('DRE')">★</div><div class="logo-container"><img src="./logos/DRE.png"></div><h2>DRE</h2><p>Spotter</p><button class="btn-download" onclick="instalar('DRE')">DOWNLOAD</button></div>
+            <div class="card" data-id="EdgeOverlays"><div class="fav-star" onclick="toggleFav('EdgeOverlays')">★</div><div class="logo-container"><img src="./logos/edge.png"></div><h2>Edge Overlays</h2><p>Iracing Overlays</p><button class="btn-download" onclick="instalar('EdgeOverlays')">DOWNLOAD</button></div>
+            <div class="card" data-id="Fanatec"><div class="fav-star" onclick="toggleFav('Fanatec')">★</div><div class="logo-container"><img src="./logos/fanatec.png"></div><h2>Fanatec</h2><p>Central Software</p><button class="btn-download" onclick="instalar('Fanatec')">DOWNLOAD</button></div>
+            <div class="card" data-id="Garage61"><div class="fav-star" onclick="toggleFav('Garage61')">★</div><div class="logo-container"><img src="./logos/Garage61.png"></div><h2>Garage61</h2><p>Telemetry</p><button class="btn-download" onclick="instalar('Garage61')">DOWNLOAD</button></div>
+            <div class="card" data-id="Heusinkveld"><div class="fav-star" onclick="toggleFav('Heusinkveld')">★</div><div class="logo-container"><img src="./logos/Heusinkveld.png"></div><h2>Heusinkveld</h2><p>SmartControl Software</p><button class="btn-download" onclick="instalar('Heusinkveld')">DOWNLOAD</button></div>
+            <div class="card" data-id="iOverlay"><div class="fav-star" onclick="toggleFav('iOverlay')">★</div><div class="logo-container"><img src="./logos/ioverlay.png"></div><h2>iOverlay</h2><p>Iracing Overlays</p><button class="btn-download" onclick="instalar('iOverlay')">DOWNLOAD</button></div>
+            <div class="card" data-id="Kapps"><div class="fav-star" onclick="toggleFav('Kapps')">★</div><div class="logo-container"><img src="./logos/Kapps.png"></div><h2>Kapps</h2><p>Iracing Overlays</p><button class="btn-download" onclick="instalar('Kapps')">DOWNLOAD</button></div>
+            <div class="card" data-id="KSR"><div class="fav-star" onclick="toggleFav('KSR')">★</div><div class="logo-container"><img src="./logos/ksr.png"></div><h2>KSR Overlay</h2><p>Iracing Overlays</p><button class="btn-download" onclick="instalar('KSR')">DOWNLOAD</button></div>
+            <div class="card" data-id="MAIRA"><div class="fav-star" onclick="toggleFav('MAIRA')">★</div><div class="logo-container"><img src="./logos/Maira.png"></div><h2>MAIRA</h2><p>Control effects on steering wheel</p><button class="btn-download" onclick="instalar('MAIRA')">DOWNLOAD</button></div>
+            <div class="card" data-id="Moza"><div class="fav-star" onclick="toggleFav('Moza')">★</div><div class="logo-container"><img src="./logos/Moza.png"></div><h2>Moza</h2><p>Pit House Software</p><button class="btn-download" onclick="instalar('Moza')">DOWNLOAD</button></div>
+            <div class="card" data-id="Paints"><div class="fav-star" onclick="toggleFav('Paints')">★</div><div class="logo-container"><img src="./logos/paints.png"></div><h2>Trading Paints</h2><p>Custom car liveries to iRacing</p><button class="btn-download" onclick="instalar('Paints')">DOWNLOAD</button></div>
+            <div class="card" data-id="RaceLab"><div class="fav-star" onclick="toggleFav('RaceLab')">★</div><div class="logo-container"><img src="./logos/RaceLab.png"></div><h2>RaceLab</h2><p>Iracing Overlays</p><button class="btn-download" onclick="instalar('RaceLab')">DOWNLOAD</button></div>
+            <div class="card" data-id="irSidekick"><div class="fav-star" onclick="toggleFav('irSidekick')">★</div><div class="logo-container"><img src="./logos/sidekick.png"></div><h2>irSidekick</h2><p>Configure triple monitors and ini settings.</p><button class="btn-download" onclick="instalar('irSidekick')">DOWNLOAD</button></div>
+            <div class="card" data-id="Simagic"><div class="fav-star" onclick="toggleFav('Simagic')">★</div><div class="logo-container"><img src="./logos/Simagic.png"></div><h2>Simagic</h2><p>SimPro Manager Software</p><button class="btn-download" onclick="instalar('Simagic')">DOWNLOAD</button></div>
+            <div class="card" data-id="SimHub"><div class="fav-star" onclick="toggleFav('SimHub')">★</div><div class="logo-container"><img src="./logos/SimHub.png"></div><h2>SimHub</h2><p>Motion, tactile and dashboards tool.</p><button class="btn-download" onclick="instalar('SimHub')">DOWNLOAD</button></div>
+            <div class="card" data-id="Simucube"><div class="fav-star" onclick="toggleFav('Simucube')">★</div><div class="logo-container"><img src="./logos/Simucube.png"></div><h2>Simucube</h2><p>Simucube Tuner Software</p><button class="btn-download" onclick="instalar('Simucube')">DOWNLOAD</button></div>
+            <div class="card" data-id="TinyPedal"><div class="fav-star" onclick="toggleFav('TinyPedal')">★</div><div class="logo-container"><img src="./logos/TinyPedal.png"></div><h2>TinyPedal</h2><p>Telemetry for rFactor 2 and LMU</p><button class="btn-download" onclick="instalar('TinyPedal')">DOWNLOAD</button></div>
+            <div class="card" data-id="VRS"><div class="fav-star" onclick="toggleFav('VRS')">★</div><div class="logo-container"><img src="./logos/VRS.png"></div><h2>VRS</h2><p>VRS One Software</p><button class="btn-download" onclick="instalar('VRS')">DOWNLOAD</button></div>
+        </div>
+    </main>
+
+    <div id="settings-view">
+        <h1 style="color: var(--primary);">SETTINGS</h1>
+        <div class="path-box" id="current-path">C:\Downloads</div>
+        <button class="btn-download" onclick="escolherPasta()" style="width: auto; padding: 15px 30px;">CHANGE FOLDER</button>
+        <br><br><button class="btn-download" onclick="toggleSettings()" style="width: 150px; background: #222;">BACK</button>
+    </div>
+
+    <footer>
+        <div class="footer-left">Created by <strong>Dário Silva</strong> <span class="app-version">v1.0.0</span></div>
+        <div style="display:flex; align-items:center;">
+            <button class="btn-open-folder" onclick="abrirPastaLocal()">OPEN FOLDER</button>
+            <div id="toolCounter">DISPLAYING 23 TOOLS</div>
+        </div>
+        <div style="display:flex; align-items:center; gap: 20px;">
+            <div class="discord-link" onclick="abrirDiscord()">Support: Dário#0286</div>
+            <div style="display:flex; align-items:center;">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">CONNECTING...</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

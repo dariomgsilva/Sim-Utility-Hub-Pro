@@ -1,0 +1,41 @@
+{
+  "name": "sim-utility-hub-pro",
+  "version": "1.0.4",
+  "description": "The ultimate hub for Sim Racing utilities",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "simracing",
+    "utility",
+    "hub"
+  ],
+  "author": "Dário Silva",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.dario.simutilityhub",
+    "productName": "Sim Utility Hub Pro",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Sim Utility Hub Pro"
+    },
+    "files": [
+      "**/*"
+    ]
+  }
+}
